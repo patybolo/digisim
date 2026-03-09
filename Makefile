@@ -16,8 +16,8 @@ help:
 	@echo "[!] Usage: make (target)"
 	@echo "    make all       =>  Compiles the whole project"
 	@echo "    make clean     =>  Clean up the compiled binaries"
-	@echo "    make install   =>  Installs digisim to /usr/bin/"
-	@echo "    make uninstall =>  Removes digisim from /usr/bin/"
+	@echo "    make install   =>  Installs digisim to /usr/local/bin/"
+	@echo "    make uninstall =>  Removes digisim from /usr/local/bin/"
 
 all: $(TARGET)
 
@@ -44,9 +44,9 @@ clean:
 	@echo "[*] raylib cleaned"
 
 install: $(TARGET)
-	@install -Dm755 $(TARGET) /usr/bin/digisim
-	@echo "[*] Installed digisim to /usr/bin/"
+	@install -Dm755 $(TARGET) /usr/local/bin/digisim
+	@echo "[*] Installed digisim to /usr/local/bin/"
 
 uninstall:
-	@rm -f /usr/bin/digisim
-	@echo "[*] Uninstalled digisim from /usr/bin/"
+	@rm -f /usr/local/bin/digisim
+	@echo "[*] Uninstalled digisim from /usr/local/bin/"
