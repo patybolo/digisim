@@ -2,7 +2,7 @@
 .PHONY: help all clean install uninstall
 
 CC      := gcc
-CFLAGS  := -Wall -Wextra -Iheader -Ilibs/raylib/src
+CFLAGS  := -O3 -Wall -Wextra -Iheader -Ilibs/raylib/src
 LDFLAGS := -lm -lpthread -ldl -lrt -lX11
 
 SRCFILES := $(wildcard src/*.c)
