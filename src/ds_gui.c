@@ -1,11 +1,9 @@
 #include "ds_gui.h"
 #include <string.h>
 
-#include "rlgl.h"
-#include "raymath.h"
-
 #define GATE_W  80
 #define GATE_H  50
+#define PADDING (GATE_H / 10)
 
 static void draw_gate_simple(DSGate *gate)
 {
@@ -28,15 +26,23 @@ void ds_render(DSState *state, Camera2D cam)
     BeginMode2D(cam);
 
     /* Draw wires */
+    /* TODO: Refine this algorithm, currently it just draws a straight line src->dst */
+    
     for (int i = 0; i < state->wire_count; i++) {
         DSWire *w = &state->wires[i];
         DSGate *src = &state->gates[w->src_gate];
         DSGate *dst = &state->gates[w->dst_gate];
+    
+        /* For each wire, we calculate the height of the connect accordingly with the input count*/
 
-        Vector2 p1 = { src->x + GATE_W, src->y + GATE_H / 2.0f };
-        Vector2 p2 = { dst->x,           dst->y + GATE_H / 2.0f };
+        Vector2 point1 = { src->x + GATE_W,
+                           src->y + GATE_H / 2.0f }; /* they come from the middle of the source gate */
+                           
+        Vector2 point2 = { dst->x,
+                           dst->y + PADDING + (GATE_H / dst->input_count) * i };
+
         Color wire_color = src->output ? GREEN : GRAY;
-        DrawLineEx(p1, p2, 2.0f, wire_color);
+        DrawLineEx(point1, point2, 2.0f, wire_color);
     }
 
     /* Draw gates */

@@ -78,7 +78,12 @@ void ds_state_tick(DSState *state, float dt)
     /* Evaluate all non-special gates */
     for (int i = 0; i < state->gate_count; i++) {
         DSGateType t = state->gates[i].type;
-        if (t != GATE_CLOCK && t != GATE_BUTTON && t != GATE_TOGGLE)
+        if ((int)t <= START_SPECIAL_GATES) /* while it's "below" the special gates, normal logic */
             ds_gate_eval(&state->gates[i]);
     }
+}
+
+void ds_state_eval_special(DSState *state, float dt)
+{
+
 }

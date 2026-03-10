@@ -27,10 +27,12 @@ int main()
         if (IsKeyPressed(KEY_DOWN) && state.sim_speed > 0.5f) state.sim_speed -= 0.5f;
 
         /* Toggle render mode */
-        if (IsKeyPressed(KEY_TAB))
+        if (IsKeyPressed(KEY_TAB)) {
             state.render_mode = (state.render_mode == RENDER_SIMPLE)
                                 ? RENDER_ADVANCED : RENDER_SIMPLE;
+        }
 
+        ds_state_eval_special(&state, dt);
         ds_state_tick(&state, dt);
         ds_gui_handle_zoom(cam); /* TODO: Fix this */
 
@@ -51,10 +53,19 @@ int main()
 void ds_demo(DSState *state)
 {
     /* Demo: add a few gates to see something on screen */
-    int c   = ds_state_add_gate(state, GATE_CONST, 0, 50, 100);
-    int a   = ds_state_add_gate(state, GATE_AND,   2, 200, 100);
-    int clk = ds_state_add_gate(state, GATE_CLOCK, 0, 50, 200);
+    int c1   = ds_state_add_gate(state, GATE_CONST,  0, 50, 100);
+    int c2   = ds_state_add_gate(state, GATE_CONST,  0, 50, 200);
+    int c3   = ds_state_add_gate(state, GATE_CONST,  0, 50, 300);
+    
+    int but  = ds_state_add_gate(state, GATE_BUTTON, 0, 50, 400);
 
-    ds_state_add_wire(state, c,   a, 0);
-    ds_state_add_wire(state, clk, a, 1);
+    int clk  = ds_state_add_gate(state, GATE_CLOCK,  0, 50, 500);
+
+    int a    = ds_state_add_gate(state, GATE_AND,    5, 300, 300);
+
+    ds_state_add_wire(state, c1,  a, 0);
+    ds_state_add_wire(state, c2,  a, 1);
+    ds_state_add_wire(state, c3,  a, 2);
+    ds_state_add_wire(state, but, a, 3);
+    ds_state_add_wire(state, clk, a, 4);
 }

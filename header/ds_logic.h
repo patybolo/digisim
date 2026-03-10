@@ -4,20 +4,23 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#define START_SPECIAL_GATES 0xFF
+
 /* Bit: logically 1 bit, backed by bool (1 byte minimum addressable) */
 typedef bool Bit;
 
 typedef enum {
     /* Logic gates */
-    GATE_NOT,
+    GATE_NOT = 0x00,
     GATE_AND,
     GATE_NAND,
     GATE_OR,
     GATE_NOR,
     GATE_XOR,
     GATE_XNOR,
+    
     /* Special gates */
-    GATE_CONST,     /* always outputs 1 */
+    GATE_CONST = START_SPECIAL_GATES,     /* always outputs 1 */
     GATE_CLOCK,     /* toggles output periodically */
     GATE_BUTTON,    /* outputs 1 while held */
     GATE_TOGGLE,    /* toggles output on click */

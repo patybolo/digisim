@@ -21,13 +21,6 @@ typedef struct {
     float        sim_speed;     /* simulation speed multiplier (1.0 = normal) */
     float        clock_acc;     /* accumulator for clock gates */
     DSRenderMode render_mode;
-
-    /* --- INTERNALS ---*/
-
-    float        _fps;
-    float        _last_tick;
-    
-
 } DSState;
 
 /* Initialize an empty simulation state */
@@ -47,5 +40,8 @@ void ds_state_update_position(DSState *state, int gate_index, float x, float y);
 
 /* Run one simulation tick: propagate wires then evaluate all gates */
 void ds_state_tick(DSState *state, float dt);
+
+/* Evaluate all special gates */
+void ds_state_eval_special(DSState *state, float dt);
 
 #endif
