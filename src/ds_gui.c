@@ -1,6 +1,9 @@
 #include "ds_gui.h"
 #include <string.h>
 
+#include "rlgl.h"
+#include "raymath.h"
+
 #define GATE_W  80
 #define GATE_H  50
 
@@ -46,9 +49,33 @@ void ds_render(DSState *state, Camera2D cam)
 
     EndMode2D();
 
-    /* HUD */
+    /* --- HUD --- */
     DrawText("DIGITAL SIMULATOR", 10, 10, 20, RAYWHITE);
     DrawText(TextFormat("Speed: %.1fx", state->sim_speed), 10, 35, 16, RAYWHITE);
     DrawText(state->render_mode == RENDER_SIMPLE ? "[S]imple" : "[A]dvanced",
              10, 55, 16, RAYWHITE);
+
+    
+}
+
+void ds_gui_handle_zoom(Camera2D cam)
+{
+    float wheel = GetMouseWheelMove();
+    if (wheel != 0)
+    {
+        // Get the world point that is under the mouse
+        Vector2 mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), cam);
+
+        // Set the offset to where the mouse is
+        cam.offset = GetMousePosition();
+
+        // Set the target to match, so that the cam maps the world space point
+        // under the cursor to the screen space point under the cursor at any zoom
+        cam.target = mouseWorldPos;
+
+        // Zoom increment
+        // Uses log scaling to provide consistent zoom speed
+        float scale = 0.2f * wheel;
+        cam.zoom = Clamp(expf(logf(cam.zoom) + scale), 0.125f, 64.0f);
+    }
 }

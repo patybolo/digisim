@@ -21,6 +21,13 @@ typedef struct {
     float        sim_speed;     /* simulation speed multiplier (1.0 = normal) */
     float        clock_acc;     /* accumulator for clock gates */
     DSRenderMode render_mode;
+
+    /* --- INTERNALS ---*/
+
+    float        _fps;
+    float        _last_tick;
+    
+
 } DSState;
 
 /* Initialize an empty simulation state */
@@ -34,6 +41,9 @@ int ds_state_add_gate(DSState *state, DSGateType type, int input_count, float x,
 
 /* Add a wire connecting src gate output to dst gate input slot */
 void ds_state_add_wire(DSState *state, int src_gate, int dst_gate, int dst_input);
+
+/* Update the position of a gate by its index. TODO: implement this by drag&drop*/
+void ds_state_update_position(DSState *state, int gate_index, float x, float y);
 
 /* Run one simulation tick: propagate wires then evaluate all gates */
 void ds_state_tick(DSState *state, float dt);
