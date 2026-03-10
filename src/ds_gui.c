@@ -64,24 +64,57 @@ void ds_render(DSState *state, Camera2D cam)
     
 }
 
-void ds_gui_handle_zoom(Camera2D cam)
+void ds_gui_handle_zoom(Camera2D *cam)
 {
     float wheel = GetMouseWheelMove();
     if (wheel != 0)
     {
         // Get the world point that is under the mouse
-        Vector2 mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), cam);
+        Vector2 mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), *cam);
 
         // Set the offset to where the mouse is
-        cam.offset = GetMousePosition();
+        cam->offset = GetMousePosition();
 
         // Set the target to match, so that the cam maps the world space point
         // under the cursor to the screen space point under the cursor at any zoom
-        cam.target = mouseWorldPos;
+        cam->target = mouseWorldPos;
 
         // Zoom increment
         // Uses log scaling to provide consistent zoom speed
         float scale = 0.2f * wheel;
-        cam.zoom = Clamp(expf(logf(cam.zoom) + scale), 0.125f, 64.0f);
+        cam->zoom = Clamp(expf(logf(cam->zoom) + scale), 0.125f, 64.0f);
+    }
+}
+
+void ds_gui_handle_drag(Camera2D *cam)
+{
+    if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE))
+    {
+        Vector2 delta = GetMouseDelta();
+        cam->target = Vector2Add(cam->target, Vector2Scale(delta, -1.0f / cam->zoom));
+    }
+}
+
+void ds_gui_handle_buttons(DSState *state, Camera2D cam)
+{
+    Vector2 mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), cam);
+    bool isDown = IsMouseButtonDown(MOUSE_BUTTON_LEFT);
+    bool isPressed = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+
+    for (int i = 0; i < state->gate_count; i++) {
+        DSGate *g = &state->gates[i];
+        if (g->type != GATE_BUTTON && g->type != GATE_TOGGLE)
+            continue;
+
+        Rectangle gate_rect = { g->x, g->y, GATE_W, GATE_H };
+        bool hovered = CheckCollisionPointRec(mouseWorldPos, gate_rect);
+
+        if (g->type == GATE_BUTTON) {
+            g->output = (isDown && hovered) ? 1 : 0;
+        } else if (g->type == GATE_TOGGLE) {
+            if (isPressed && hovered) {
+                g->output = !g->output;
+            }
+        }
     }
 }

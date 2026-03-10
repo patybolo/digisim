@@ -32,9 +32,10 @@ int main()
                                 ? RENDER_ADVANCED : RENDER_SIMPLE;
         }
 
-        ds_state_eval_special(&state, dt);
+        ds_gui_handle_buttons(&state, cam);
+        ds_gui_handle_drag(&cam);
         ds_state_tick(&state, dt);
-        ds_gui_handle_zoom(cam); /* TODO: Fix this */
+        ds_gui_handle_zoom(&cam);
 
         BeginDrawing();
         

@@ -82,8 +82,3 @@ void ds_state_tick(DSState *state, float dt)
             ds_gate_eval(&state->gates[i]);
     }
 }
-
-void ds_state_eval_special(DSState *state, float dt)
-{
-
-}
