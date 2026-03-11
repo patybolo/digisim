@@ -2,8 +2,18 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "raylib.h" /* For the position updating and mouse handling in this file */
+
 #define INITIAL_CAPACITY 16
 #define CLOCK_PERIOD     1.0f  /* seconds per toggle at speed 1.0 */
+
+void ds_bstate_init(DSBusyState *bstate)
+{
+    bstate->gate_index  = 0;
+    bstate->is_busy     = false;
+    bstate->x           = 0.0f;
+    bstate->y           = 0.0f;
+}
 
 void ds_state_init(DSState *state)
 {
@@ -16,6 +26,8 @@ void ds_state_init(DSState *state)
 
     state->wire_capacity = INITIAL_CAPACITY;
     state->wires = calloc(state->wire_capacity, sizeof(DSWire));
+
+    state->busy_adding = false;
 }
 
 void ds_state_destroy(DSState *state)
@@ -52,6 +64,12 @@ void ds_state_add_wire(DSState *state, int src_gate, int dst_gate, int dst_input
     state->wires[state->wire_count++] = w;
 }
 
+void ds_state_update_position(DSState *state, int gate_index, float x, float y)
+{
+    state->gates[gate_index].x = x;
+    state->gates[gate_index].y = y;
+}
+
 void ds_state_tick(DSState *state, float dt)
 {
     /* Update clock accumulator */
@@ -81,4 +99,33 @@ void ds_state_tick(DSState *state, float dt)
         if ((int)t <= START_SPECIAL_GATES) /* while it's "below" the special gates, normal logic */
             ds_gate_eval(&state->gates[i]);
     }
+}
+
+void ds_bstate_set(DSBusyState *bstate, int input)
+{
+    DSGate gate      = ds_gate_create(input, 2); /* TODO: this is a placeholder, add logic for more than 2 inputs */
+    bstate->gate     = gate;
+    bstate->x        = GetMousePosition().x;
+    bstate->y        = GetMousePosition().y;
+    bstate->is_busy  = true;
+}
+
+void ds_bstate_snap_to_mouse(DSBusyState *bstate)
+{
+    Vector2 delta = GetMouseDelta();
+    bstate->x += delta.x;
+    bstate->y += delta.y;
+}
+
+void ds_bstate_drop_gate(DSBusyState *bstate, DSState *state)
+{
+    if(bstate->gate_index != 0) {
+        /* Drop in place logic for an existing gate */
+        ds_state_update_position(state, bstate->gate_index, bstate->x, bstate->y);
+    }
+    ds_state_add_gate(state, bstate->gate.type, 2, bstate->x, bstate->y); /* TODO: also handle more than input_count = 2 here */
+    
+    bstate->is_busy     = false;
+    bstate->gate_index  = 0;
+    state->busy_adding  = false; /* now it can handle gate keys again */
 }

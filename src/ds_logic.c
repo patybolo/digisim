@@ -61,9 +61,9 @@ static Bit logic_passthrough(Bit *inputs, int count)
     return 0;
 }
 
-/* --- Name table --- */
+/* --- GATE NAME LOOKUP TABLE --- */
 
-static const char *gate_names[GATE_TYPE_COUNT] = {
+static const char * const gate_names[GATE_TYPE_COUNT] = {
     [GATE_NOT]    = "NOT",
     [GATE_AND]    = "AND",
     [GATE_NAND]   = "NAND",
@@ -77,14 +77,8 @@ static const char *gate_names[GATE_TYPE_COUNT] = {
     [GATE_TOGGLE] = "TGL",
 };
 
-const char *ds_gate_type_name(DSGateType type)
-{
-    if (type >= 0 && type < GATE_TYPE_COUNT)
-        return gate_names[type];
-    return "???";
-}
 
-/* --- Logic function lookup --- */
+/* --- LOGIC FUNCTION LOOKUP TABLE--- */
 
 Bit (*ds_gate_logic_fn(DSGateType type))(Bit *, int)
 {
@@ -103,6 +97,14 @@ Bit (*ds_gate_logic_fn(DSGateType type))(Bit *, int)
     default:          return logic_passthrough;
     }
 }
+
+const char *ds_gate_type_name(DSGateType type)
+{
+    if (type >= 0 && type < GATE_TYPE_COUNT)
+        return gate_names[type];
+    return "???";
+}
+
 
 /* --- Gate lifecycle --- */
 
