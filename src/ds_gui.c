@@ -96,6 +96,20 @@ void ds_render_busy_gate(DSBusyState *bstate)
              16, BLACK);
 }
 
+int ds_get_gate(DSState* state, Camera2D cam)
+{
+    Vector2 mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), cam);
+
+    for (int i = 0; i < state->gate_count; i++) {
+        DSGate *g = &state->gates[i];
+        Rectangle gate_rect = { g->x, g->y, GATE_W, GATE_H };
+        if(CheckCollisionPointRec(mouseWorldPos, gate_rect))
+            return i;
+    }
+
+    return -1;
+}
+
 void ds_gui_render_menu(DSState *state, DSBusyState *bstate, Font text_font)
 {
     DrawText(menu_text[SIM_NAME], TOP_LEFT_X, TOP_LEFT_Y, 20, RAYWHITE);

@@ -53,6 +53,8 @@ int main()
 
             ds_render(&state, cam);
             ds_gui_render_menu(&state, &bstate, text_font);
+            /* TODO: Remove this, it's only for debugging */
+            DrawText(TextFormat("Current Gate: %d", ds_get_gate(&state, cam)), 500, 500, 32, RAYWHITE);
             if(bstate.is_busy)
                 ds_render_busy_gate(&bstate);
         EndDrawing();

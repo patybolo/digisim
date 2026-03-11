@@ -58,6 +58,9 @@ void ds_render(DSState *state, Camera2D cam);
 /* Render the gate in the busy state */
 void ds_render_busy_gate(DSBusyState *bstate);
 
+/* Returns the gate the mouse is currently on. Returns -1 by default if no gate is below the mouse */
+int ds_get_gate(DSState *state, Camera2D cam);
+
 /* Render the text menu */
 void ds_gui_render_menu(DSState *state, DSBusyState *bstate, Font text_font);
 
