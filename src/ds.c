@@ -2,7 +2,7 @@
 #include "ds_state.h"
 #include "ds_gui.h"
 
-#define FPS 60
+#define FPS 144
 
 void ds_demo();
 

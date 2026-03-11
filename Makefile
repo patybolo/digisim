@@ -3,11 +3,19 @@
 
 CC      := gcc
 CFLAGS  := -O3 -Wall -Wextra -Iheader -Ilibs/raylib/src
-LDFLAGS := -lm -lpthread -ldl -lrt -lX11
+
+ifeq ($(OS),Windows_NT)
+    LDFLAGS := -lopengl32 -lgdi32 -lwinmm
+    TARGET  := build/digisim.exe
+    NPROC   := $(NUMBER_OF_PROCESSORS)
+else
+    LDFLAGS := -lm -lpthread -ldl -lrt -lX11
+    TARGET  := build/digisim
+    NPROC   := $(shell nproc)
+endif
 
 SRCFILES := $(wildcard src/*.c)
 OBJFILES := $(patsubst src/%.c,build/%.o,$(SRCFILES))
-TARGET   := build/digisim
 
 RAYLIB_DIR := libs/raylib/src
 RAYLIB_LIB := $(RAYLIB_DIR)/libraylib.a
@@ -23,7 +31,7 @@ all: $(TARGET)
 
 $(RAYLIB_LIB):
 	@echo "[*] Building raylib..."
-	@$(MAKE) -C $(RAYLIB_DIR) PLATFORM=PLATFORM_DESKTOP -j$(nproc) > /dev/null 2>&1
+	@$(MAKE) -C $(RAYLIB_DIR) PLATFORM=PLATFORM_DESKTOP -j$(NPROC) > /dev/null 2>&1
 	@echo "[*] raylib built successfully"
 
 $(TARGET): $(OBJFILES) $(RAYLIB_LIB)
