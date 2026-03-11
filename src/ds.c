@@ -32,14 +32,10 @@ int main()
         if (IsKeyPressed(KEY_DOWN) && state.sim_speed > 0.5f) 
             state.sim_speed -= 0.5f;
 
-        /* Toggle render mode */
-        if (IsKeyPressed(KEY_TAB))
-            state.render_mode = (state.render_mode == RENDER_SIMPLE)
-                                ? RENDER_ADVANCED : RENDER_SIMPLE;
-
         ds_gui_handle_buttons(&state, cam);
         ds_gui_handle_drag(&cam);
         ds_gui_handle_zoom(&cam);
+        ds_gui_handle_add_input(&bstate);
 
         int input_gkey = ds_gui_handle_add_keys(&state);
         if (input_gkey != -1) 
@@ -55,7 +51,8 @@ int main()
 
         BeginDrawing();
 
-            ds_render(&state, cam, text_font);
+            ds_render(&state, cam);
+            ds_gui_render_menu(&state, &bstate, text_font);
             if(bstate.is_busy)
                 ds_render_busy_gate(&bstate);
         EndDrawing();

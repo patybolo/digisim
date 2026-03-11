@@ -13,21 +13,23 @@ void ds_bstate_init(DSBusyState *bstate)
     bstate->is_busy     = false;
     bstate->x           = 0.0f;
     bstate->y           = 0.0f;
+    bstate->input_count = 0;
 }
 
 void ds_state_init(DSState *state)
 {
     memset(state, 0, sizeof(*state));
-    state->sim_speed   = 1.0f;
-    state->render_mode = RENDER_SIMPLE;
 
-    state->gate_capacity = INITIAL_CAPACITY;
-    state->gates = calloc(state->gate_capacity, sizeof(DSGate));
+    state->sim_speed        = 1.0f;
 
-    state->wire_capacity = INITIAL_CAPACITY;
-    state->wires = calloc(state->wire_capacity, sizeof(DSWire));
+    state->gate_capacity    = INITIAL_CAPACITY;
+    state->gates            = calloc(state->gate_capacity, sizeof(DSGate));
 
-    state->busy_adding = false;
+    state->wire_capacity    = INITIAL_CAPACITY;
+    state->wires            = calloc(state->wire_capacity, sizeof(DSWire));
+    state->connected_wires  = 0;
+
+    state->busy_adding      = false;
 }
 
 void ds_state_destroy(DSState *state)
@@ -86,7 +88,7 @@ void ds_state_tick(DSState *state, float dt)
 
     /* Propagate wires: copy source outputs to destination inputs */
     for (int i = 0; i < state->wire_count; i++) {
-        DSWire *w = &state->wires[i];
+        DSWire *w   = &state->wires[i];
         DSGate *src = &state->gates[w->src_gate];
         DSGate *dst = &state->gates[w->dst_gate];
         if (w->dst_input < dst->input_count)
@@ -103,11 +105,19 @@ void ds_state_tick(DSState *state, float dt)
 
 void ds_bstate_set(DSBusyState *bstate, int input)
 {
-    DSGate gate      = ds_gate_create(input, 2); /* TODO: this is a placeholder, add logic for more than 2 inputs */
+    DSGate gate      = ds_gate_create(input, bstate->input_count);
     bstate->gate     = gate;
-    bstate->x        = GetMousePosition().x;
-    bstate->y        = GetMousePosition().y;
+    bstate->x        = GetMousePosition().x - (GATE_W/2);
+    bstate->y        = GetMousePosition().y - (GATE_H/2);
     bstate->is_busy  = true;
+}
+
+void ds_bstate_reset(DSBusyState *bstate)
+{
+    if(!bstate->is_busy) /* error handling (_kinda_) */
+    {
+        ds_bstate_init(bstate);
+    }
 }
 
 void ds_bstate_snap_to_mouse(DSBusyState *bstate)
@@ -123,9 +133,10 @@ void ds_bstate_drop_gate(DSBusyState *bstate, DSState *state)
         /* Drop in place logic for an existing gate */
         ds_state_update_position(state, bstate->gate_index, bstate->x, bstate->y);
     }
-    ds_state_add_gate(state, bstate->gate.type, 2, bstate->x, bstate->y); /* TODO: also handle more than input_count = 2 here */
+    ds_state_add_gate(state, bstate->gate.type, bstate->input_count, bstate->x, bstate->y);
     
     bstate->is_busy     = false;
-    bstate->gate_index  = 0;
     state->busy_adding  = false; /* now it can handle gate keys again */
+
+    ds_bstate_reset(bstate);
 }

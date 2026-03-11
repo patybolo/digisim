@@ -1,31 +1,23 @@
 #include "ds_gui.h"
 #include <string.h>
 
-#define GATE_W  80
-#define GATE_H  50
-#define PADDING (GATE_H / 10)
-
-#define TOP_LEFT_X 10
-#define TOP_LEFT_Y 10
-#define TOP_RIGHT_X WINDOW_WIDTH - 100 /* substract 100 to leave space for the text */
-#define TOP_RIGHT_Y 10
-
 /* --- GUI TEXT LOOKUP TABLES --- */
 static const char * const menu_text[TEXT_ITEM_COUNT] = {
     [SIM_NAME]       = "DIGITAL SIMULATOR",
-    [INSERT_NOT]     = "[N]OT",
-    [INSERT_AND]     = "[A]ND",
-    [INSERT_NAND]    = "NAN[D]",
-    [INSERT_OR]      = "[O]R",
-    [INSERT_NOR]     = "NO[R]",
-    [INSERT_XOR]     = "[X]OR",
-    [INSERT_XNOR]    = "XNOR (g)",
-    [INSERT_CONST]   = "[C]ONST",
-    [INSERT_CLOCK]   = "CLOC[K]",
-    [INSERT_BUTTON]  = "[B]UTTON",
-    [INSERT_TOGGLE]  = "[T]OGGLE",
+    [INSERT_NOT]     = "[n] not",
+    [INSERT_AND]     = "[a] and",
+    [INSERT_NAND]    = "[d] nand",
+    [INSERT_OR]      = "[o] or",
+    [INSERT_NOR]     = "[r] nor",
+    [INSERT_XOR]     = "[x] xor",
+    [INSERT_XNOR]    = "[g] xnor",
+    [INSERT_CONST]   = "[c] CONST",
+    [INSERT_CLOCK]   = "[k] CLOCK",
+    [INSERT_BUTTON]  = "[b] BUTTON",
+    [INSERT_TOGGLE]  = "[t] TOGGLE",
 };
 
+/* --- GATE KEY LOOKUP TABLE --- */
 static const int gate_keys[GKEY_COUNT] = {
     [GKEY_NOT]       = KEY_N,
     [GKEY_AND]       = KEY_A,
@@ -40,7 +32,7 @@ static const int gate_keys[GKEY_COUNT] = {
     [GKEY_TOGGLE]    = KEY_T
 };
 
-static void draw_gate_simple(DSGate *gate)
+static void draw_gate(DSGate *gate)
 {
     Color box_color = gate->output ? GREEN : GRAY;
     DrawRectangle((int)gate->x, (int)gate->y, GATE_W, GATE_H, box_color);
@@ -54,17 +46,19 @@ static void draw_gate_simple(DSGate *gate)
              16, BLACK);
 }
 
-void ds_render(DSState *state, Camera2D cam, Font text_font)
+void ds_render(DSState *state, Camera2D cam)
 {
     ClearBackground((Color){30, 30, 30, 255});
 
     BeginMode2D(cam);
 
     /* Draw wires */
-    /* TODO: Refine this algorithm, currently it just draws a straight line src->dst */
+    /* TODO: Refine this algorithm, currently it just draws a straight line src->dst
+       Hopefully I can implement something to render the lines in parts to straighten them...
+    */
     
     for (int i = 0; i < state->wire_count; i++) {
-        DSWire *w = &state->wires[i];
+        DSWire *w   = &state->wires[i];
         DSGate *src = &state->gates[w->src_gate];
         DSGate *dst = &state->gates[w->dst_gate];
     
@@ -82,18 +76,10 @@ void ds_render(DSState *state, Camera2D cam, Font text_font)
 
     /* Draw gates */
     for (int i = 0; i < state->gate_count; i++) {
-        if (state->render_mode == RENDER_SIMPLE)
-            draw_gate_simple(&state->gates[i]);
-        else
-            draw_gate_simple(&state->gates[i]); /* TODO: advanced rendering */
+        draw_gate(&state->gates[i]);
     }
 
-    EndMode2D();
-
-    /* --- HUD --- */
-    ds_gui_render_menu(state, text_font);
-
-    
+    EndMode2D();    
 }
 
 void ds_render_busy_gate(DSBusyState *bstate)
@@ -110,20 +96,28 @@ void ds_render_busy_gate(DSBusyState *bstate)
              16, BLACK);
 }
 
-void ds_gui_render_menu(DSState *state, Font text_font)
+void ds_gui_render_menu(DSState *state, DSBusyState *bstate, Font text_font)
 {
     DrawText(menu_text[SIM_NAME], TOP_LEFT_X, TOP_LEFT_Y, 20, RAYWHITE);
     DrawText(TextFormat("Speed: %.1fx", state->sim_speed), 10, 35, 16, RAYWHITE);
-    DrawText(state->render_mode == RENDER_SIMPLE ? "[S]imple" : "[A]dvanced",
-             10, 55, 16, RAYWHITE);
+    /* DrawText(state->render_mode == RENDER_SIMPLE ? "[S]imple" : "[A]dvanced",
+             10, 55, 16, RAYWHITE); */
              
-    /* Start from i=1 to skip SIM_NAME*/
-    for(int i = 1; i < TEXT_ITEM_COUNT; i++) {
-        DrawTextEx(text_font,menu_text[i],
+    /* Start from i=START_INSERT_TEXT to skip UI elements that aren't gate insertions*/
+    for(int i = START_INSERT_TEXT; i < TEXT_ITEM_COUNT; i++) {
+        DrawTextEx(text_font, menu_text[i],
             (Vector2){TOP_RIGHT_X, TOP_RIGHT_Y + (30 * i)},
-            24,
+            32,
             0,
             LIGHTGRAY);
+    }
+
+    if(bstate->is_busy) {
+        DrawText(TextFormat("Input Count: %d", bstate->input_count),
+                TOP_LEFT_X + 100,
+                TOP_LEFT_Y + 30,
+                24,
+                 BLUE);
     }
 }
 
@@ -195,4 +189,14 @@ int ds_gui_handle_add_keys(DSState *state)
     }
 
     return gate_type;
+}
+
+void ds_gui_handle_add_input(DSBusyState *bstate)
+{
+    if(!bstate->is_busy) return;
+
+    if (IsKeyReleased(KEY_X))
+        bstate->input_count++;
+    else if (IsKeyReleased(KEY_Z) && bstate->input_count > 0)
+        bstate->input_count--;
 }
