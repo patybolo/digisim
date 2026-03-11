@@ -62,7 +62,7 @@ void ds_render_busy_gate(DSBusyState *bstate);
 int ds_get_gate(DSState *state, Camera2D cam);
 
 /* Render the text menu */
-void ds_gui_render_menu(DSState *state, DSBusyState *bstate, Font text_font);
+void ds_gui_render_menu(DSState *state, DSBusyState *bstate, Camera2D cam, Font text_font);
 
 /* Handle wheel zoom */
 void ds_gui_handle_zoom(Camera2D *cam);
@@ -83,7 +83,7 @@ void ds_gui_handle_add_input(DSBusyState *bstate);
 /* TODO: Handle gate deletion from simulation */
 void ds_gui_handle_delete(DSState *state, Camera2D *cam);
 
-/* TODO: handle insertion of wires with KEY_Q by holding and dragging to another gate */
-void ds_gui_handle_connection(DSState *state);
+/* Handle insertion of wires with KEY_Q: press on src gate, release on dst gate */
+void ds_gui_handle_connection(DSState *state, Camera2D cam);
 
 #endif

@@ -57,8 +57,11 @@ void ds_state_reset_clock(DSState *state);
 /* Add a gate to the simulation, returns its index */
 int ds_state_add_gate(DSState *state, DSGateType type, int input_count, float x, float y);
 
+/* TODO: Moves gate state->gates[gate_index] to DSBusyState */
+void ds_state_move_to_busy(DSState *state, DSBusyState *bstate, int gate_index);
+
 /* TODO: Remove gate from state and push all gates to their appropiate place */
-void ds_sate_remove_gate(DSState *state, int gate_index);
+void ds_state_remove_gate(DSState *state, int gate_index);
 
 /* Add a wire connecting src gate output to dst gate input slot */
 void ds_state_add_wire(DSState *state, int src_gate, int dst_gate, int dst_input);

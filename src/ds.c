@@ -36,14 +36,24 @@ int main()
         ds_gui_handle_drag(&cam);
         ds_gui_handle_zoom(&cam);
         ds_gui_handle_add_input(&bstate);
+        ds_gui_handle_delete(&state, &cam);
+        ds_gui_handle_connection(&state, cam);
 
         int input_gkey = ds_gui_handle_add_keys(&state);
         if (input_gkey != -1) 
             ds_bstate_set(&bstate, input_gkey);
 
+        /* Right-click drag: pick up existing gate */
+        if (!bstate.is_busy && IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
+            int idx = ds_get_gate(&state, cam);
+            if (idx != -1)
+                ds_state_move_to_busy(&state, &bstate, idx);
+        }
+
         if(bstate.is_busy) {
             ds_bstate_snap_to_mouse(&bstate);
-            if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
+            if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) ||
+                IsMouseButtonReleased(MOUSE_BUTTON_RIGHT))
                 ds_bstate_drop_gate(&bstate, &state);
         }
 
@@ -52,11 +62,11 @@ int main()
         BeginDrawing();
 
             ds_render(&state, cam);
-            ds_gui_render_menu(&state, &bstate, text_font);
+            ds_gui_render_menu(&state, &bstate, cam, text_font);
             /* TODO: Remove this, it's only for debugging */
-            DrawText(TextFormat("Current Gate: %d", ds_get_gate(&state, cam)), 500, 500, 32, RAYWHITE);
             if(bstate.is_busy)
                 ds_render_busy_gate(&bstate);
+
         EndDrawing();
     }
 

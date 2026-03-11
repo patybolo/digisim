@@ -9,11 +9,11 @@
 
 void ds_bstate_init(DSBusyState *bstate)
 {
-    bstate->gate_index  = 0;
+    bstate->gate_index  = -1;
     bstate->is_busy     = false;
     bstate->x           = 0.0f;
     bstate->y           = 0.0f;
-    bstate->input_count = 0;
+    bstate->input_count = 2;
 }
 
 void ds_state_init(DSState *state)
@@ -53,6 +53,41 @@ int ds_state_add_gate(DSState *state, DSGateType type, int input_count, float x,
     g.y = y;
     state->gates[state->gate_count] = g;
     return state->gate_count++;
+}
+
+void ds_state_remove_gate(DSState *state, int gate_index)
+{
+    if (gate_index < 0 || gate_index >= state->gate_count) return;
+
+    /* Free the gate's dynamic inputs */
+    ds_gate_destroy(&state->gates[gate_index]);
+
+    /* Remove all wires connected to/from this gate */
+    int w = 0;
+    while (w < state->wire_count) {
+        if (state->wires[w].src_gate == gate_index ||
+            state->wires[w].dst_gate == gate_index) {
+            for (int j = w; j < state->wire_count - 1; j++)
+                state->wires[j] = state->wires[j + 1];
+            state->wire_count--;
+        } else {
+            w++;
+        }
+    }
+
+    /* Update wire indices for gates that shifted down */
+    for (int i = 0; i < state->wire_count; i++) {
+        if (state->wires[i].src_gate > gate_index)
+            state->wires[i].src_gate--;
+        if (state->wires[i].dst_gate > gate_index)
+            state->wires[i].dst_gate--;
+    }
+
+    /* Shift remaining gates down */
+    for (int i = gate_index; i < state->gate_count - 1; i++)
+        state->gates[i] = state->gates[i + 1];
+
+    state->gate_count--;
 }
 
 void ds_state_add_wire(DSState *state, int src_gate, int dst_gate, int dst_input)
@@ -105,8 +140,15 @@ void ds_state_tick(DSState *state, float dt)
 
 void ds_bstate_set(DSBusyState *bstate, int input)
 {
+    /* Special gates have no inputs */
+    if (input >= START_SPECIAL_GATES)
+        bstate->input_count = 0;
+    else if (bstate->input_count < 2)
+        bstate->input_count = 2;
+
     DSGate gate      = ds_gate_create(input, bstate->input_count);
     bstate->gate     = gate;
+    bstate->gate_index = -1;
     bstate->x        = GetMousePosition().x - (GATE_W/2);
     bstate->y        = GetMousePosition().y - (GATE_H/2);
     bstate->is_busy  = true;
@@ -127,16 +169,31 @@ void ds_bstate_snap_to_mouse(DSBusyState *bstate)
     bstate->y += delta.y;
 }
 
+void ds_state_move_to_busy(DSState *state, DSBusyState *bstate, int gate_index)
+{
+    if (gate_index < 0 || gate_index >= state->gate_count) return;
+
+    DSGate *g = &state->gates[gate_index];
+    bstate->gate        = *g;  /* shallow copy for rendering */
+    bstate->gate_index  = gate_index;
+    bstate->input_count = g->input_count;
+    bstate->x           = g->x;
+    bstate->y           = g->y;
+    bstate->is_busy     = true;
+}
+
 void ds_bstate_drop_gate(DSBusyState *bstate, DSState *state)
 {
-    if(bstate->gate_index != 0) {
-        /* Drop in place logic for an existing gate */
+    if(bstate->gate_index >= 0) {
+        /* Drop in place logic for an existing gate — just update position */
         ds_state_update_position(state, bstate->gate_index, bstate->x, bstate->y);
+    } else {
+        /* New gate being added */
+        ds_state_add_gate(state, bstate->gate.type, bstate->input_count, bstate->x, bstate->y);
     }
-    ds_state_add_gate(state, bstate->gate.type, bstate->input_count, bstate->x, bstate->y);
     
     bstate->is_busy     = false;
-    state->busy_adding  = false; /* now it can handle gate keys again */
+    state->busy_adding  = false;
 
     ds_bstate_reset(bstate);
 }

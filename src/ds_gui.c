@@ -18,6 +18,9 @@ static const char * const menu_text[TEXT_ITEM_COUNT] = {
 };
 
 /* --- GATE KEY LOOKUP TABLE --- */
+/* File-scope state for connection mode (KEY_Q) */
+static int connecting_src_gate = -1;
+
 static const int gate_keys[GKEY_COUNT] = {
     [GKEY_NOT]       = KEY_N,
     [GKEY_AND]       = KEY_A,
@@ -61,6 +64,7 @@ void ds_render(DSState *state, Camera2D cam)
         DSWire *w   = &state->wires[i];
         DSGate *src = &state->gates[w->src_gate];
         DSGate *dst = &state->gates[w->dst_gate];
+        if(dst->input_count == 0) continue;
     
         /* For each wire, we calculate the height of the connect accordingly with the input count*/
 
@@ -68,7 +72,7 @@ void ds_render(DSState *state, Camera2D cam)
                            src->y + GATE_H / 2.0f }; /* they come from the middle of the source gate */
                            
         Vector2 point2 = { dst->x,
-                           dst->y + PADDING + (GATE_H / dst->input_count) * i };
+                           dst->y + PADDING + ((float)GATE_H / dst->input_count) * w->dst_input };
 
         Color wire_color = src->output ? GREEN : GRAY;
         DrawLineEx(point1, point2, 2.0f, wire_color);
@@ -110,7 +114,7 @@ int ds_get_gate(DSState* state, Camera2D cam)
     return -1;
 }
 
-void ds_gui_render_menu(DSState *state, DSBusyState *bstate, Font text_font)
+void ds_gui_render_menu(DSState *state, DSBusyState *bstate, Camera2D cam, Font text_font)
 {
     DrawText(menu_text[SIM_NAME], TOP_LEFT_X, TOP_LEFT_Y, 20, RAYWHITE);
     DrawText(TextFormat("Speed: %.1fx", state->sim_speed), 10, 35, 16, RAYWHITE);
@@ -126,10 +130,18 @@ void ds_gui_render_menu(DSState *state, DSBusyState *bstate, Font text_font)
             LIGHTGRAY);
     }
 
+    if(connecting_src_gate != -1) {
+        const char *src_name = ds_gate_type_name(state->gates[connecting_src_gate].type);
+        DrawText(TextFormat("Connecting from: %s [%d]", src_name, connecting_src_gate),
+                 25, WINDOW_HEIGHT - 80, 20, YELLOW);
+    }
+
+    DrawText(TextFormat("Current Gate: %d", ds_get_gate(state, cam)), 25, WINDOW_HEIGHT - 50 , 24, RAYWHITE);
+    
     if(bstate->is_busy) {
         DrawText(TextFormat("Input Count: %d", bstate->input_count),
-                TOP_LEFT_X + 100,
-                TOP_LEFT_Y + 30,
+                25,
+                WINDOW_HEIGHT - 100,
                 24,
                  BLUE);
     }
@@ -213,4 +225,47 @@ void ds_gui_handle_add_input(DSBusyState *bstate)
         bstate->input_count++;
     else if (IsKeyReleased(KEY_Z) && bstate->input_count > 0)
         bstate->input_count--;
+}
+
+void ds_gui_handle_delete(DSState *state, Camera2D *cam)
+{
+    if (IsKeyReleased(KEY_DELETE)) {
+        int gate_index = ds_get_gate(state, *cam); 
+        ds_state_remove_gate(state, gate_index);
+    }
+}
+
+void ds_gui_handle_connection(DSState *state, Camera2D cam)
+{
+    if (IsKeyPressed(KEY_Q)) {
+        connecting_src_gate = ds_get_gate(state, cam);
+    }
+
+    if (IsKeyReleased(KEY_Q)) {
+        if (connecting_src_gate != -1) {
+            int dst_gate = ds_get_gate(state, cam);
+            if (dst_gate != -1 && dst_gate != connecting_src_gate) {
+                DSGate *dst = &state->gates[dst_gate];
+                /* Find first unoccupied input slot */
+                int dst_input = -1;
+                for (int i = 0; i < dst->input_count; i++) {
+                    bool occupied = false;
+                    for (int w = 0; w < state->wire_count; w++) {
+                        if (state->wires[w].dst_gate == dst_gate &&
+                            state->wires[w].dst_input == i) {
+                            occupied = true;
+                            break;
+                        }
+                    }
+                    if (!occupied) {
+                        dst_input = i;
+                        break;
+                    }
+                }
+                if (dst_input != -1)
+                    ds_state_add_wire(state, connecting_src_gate, dst_gate, dst_input);
+            }
+        }
+        connecting_src_gate = -1;
+    }
 }
